@@ -7,6 +7,7 @@ import uuid
 import pandas as pd
 # from numba import njit, cuda
 from p_tqdm import p_umap
+from tqdm import tqdm
 
 rng = np.random.default_rng(16558947)
 
@@ -168,9 +169,9 @@ class Environment():
                 self.competitions = 0
                 self.predations = 0
 
-                print(self.steps)
-                print('R:', self.Nr)
-                print('C:',self.Nc)
+                # print(self.steps)
+                # print('R:', self.Nr)
+                # print('C:',self.Nc)
                 # check termination
                 # if self.steps > self.transient_steps:
                 #     test, test_value = self.stop_condition()
@@ -180,8 +181,41 @@ class Environment():
             if self.Nr == 0:
                 return self.on_exit(cause='collapse')
 
-            if self.Nc == 0:
-                return self.on_exit(cause='prey-release')
+            # if self.Nc == 0:
+            #     return self.on_exit(cause='prey-release')
+        return self.on_exit(cause='timeout')
+
+    def run_time(self, max_time):
+        self.steps = 0
+        while self.t < max_time:
+            # perform a gillespie step
+            self.gillespie_step()
+            self.steps += 1
+
+            # record data 
+            if self.steps % self.data_interval == 0:
+                self.store_data()
+                self.R_births = 0
+                self.R_deaths = 0
+                self.C_births = 0
+                self.C_deaths = 0
+                self.competitions = 0
+                self.predations = 0
+
+                # print(self.steps)
+                # print('R:', self.Nr)
+                # print('C:',self.Nc)
+                # check termination
+                # if self.steps > self.transient_steps:
+                #     test, test_value = self.stop_condition()
+                #     if test:
+                #         return self.on_exit(cause='equilibrium', testValue=test_value)
+
+            if self.Nr == 0:
+                return self.on_exit(cause='collapse')
+
+            # if self.Nc == 0:
+            #     return self.on_exit(cause='prey-release')
         return self.on_exit(cause='timeout')
 
 
@@ -373,7 +407,7 @@ class Environment():
             for j in sublist:
                 array = np.append(array, np.array([[i, j]]), axis=0)
         return array
-
+    
     def update_birth(self, repr_id, species):
 
         if species == 'R':
@@ -467,7 +501,8 @@ class Environment():
             ave_Nr = 0.
             ave_Nc = 0.
         elif cause == 'prey-release':
-            ave_Nr = self.R_MF_carrCap
+            ave_Nr, ave_Nc = self.calculate_ave_abundance()
+            # ave_Nr = self.R_MF_carrCap
             ave_Nc = 0.
         else:
             ave_Nr, ave_Nc = self.calculate_ave_abundance()
@@ -498,6 +533,8 @@ class Environment():
                     'interDistance': self.competition_kernel,
                     'envSize': self.env_size,
                     'cause': cause,
+                    'NCompetitions': self.competitions,
+                    'NPredations': self.predations,
                     'Rcenters': self.R_centers,
                     'Rpositions': self.Rx,
                     'Ccenters': self.C_centers,
@@ -530,7 +567,7 @@ class Environment():
         Nrs = auxdf['Nr'].values
         Ncs = auxdf['Nc'].values
 
-        return Nrs*dts/np.sum(dts), Ncs*dts/np.sum(dts)
+        return np.sum(Nrs*dts)/np.sum(dts), np.sum(Ncs*dts)/np.sum(dts)
         # print(Nrs.shape, dts.shape)
 
         # return np.average(Nrs, weights=dts, axis=), np.average(Ncs, weights=dts)
