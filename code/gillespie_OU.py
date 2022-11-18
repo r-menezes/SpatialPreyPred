@@ -1,13 +1,8 @@
-from turtle import color
 import numpy as np
 from scipy.spatial import KDTree
-from scipy.stats import kstest, skew, binom
-from scipy.interpolate import interp1d
 import uuid
 import pandas as pd
 # from numba import njit, cuda
-from p_tqdm import p_umap
-from tqdm import tqdm
 
 rng = np.random.default_rng(16558947)
 
@@ -314,7 +309,6 @@ class Environment():
         self.total_C_death_rate = self.C_death_rate * self.Nc
 
         # create positions tree
-
         self.Rpositions_tree = KDTree(self.Rx, compact_nodes=False, balanced_tree=False, boxsize=self.env_size)
         self.Cpositions_tree = KDTree(self.Cx, compact_nodes=False, balanced_tree=False, boxsize=self.env_size)
 
