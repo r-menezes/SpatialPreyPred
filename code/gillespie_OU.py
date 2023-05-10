@@ -266,8 +266,11 @@ class Environment():
             competing_pair = rng.choice(range(self.n_competing_pairs), p=probabilites)
             competing_pair = self.possible_competing_pairs[competing_pair]
             # choose randomly which individual of the pair died
+            # TODO: implement the different 'fitnesses'
+            # TODO: it should be more likely that the 'invading' organisms loose
             dead_id = rng.choice(competing_pair)
             # update death
+            # TODO: change update death to dispersal
             self.update_death(dead_id=dead_id, species='R')
 
             self.competitions += 1
